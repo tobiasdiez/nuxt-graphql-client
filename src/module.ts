@@ -136,7 +136,7 @@ export default defineNuxtModule<GqlConfig>({
       const plugins = ['typescript']
 
       if (documents?.length) {
-        plugins.push('typescript-operations', 'typescript-graphql-request')
+        plugins.push('typescript-operations', 'ohmygql/plugin')
       }
 
       ctx.template = await generate({
@@ -181,7 +181,7 @@ export default defineNuxtModule<GqlConfig>({
       })
 
       nuxt.hook('autoImports:dirs', (dirs) => {
-        if (!ctx.template.includes('export function getSdk')) { return }
+        if (!ctx.template.includes('export function gqlSdk')) { return }
 
         dirs.push(resolver.resolve('runtime/composables'))
       })
@@ -214,10 +214,6 @@ export default defineNuxtModule<GqlConfig>({
     }
 
     await generateGqlTypes()
-
-    extendViteConfig((config) => {
-      config.optimizeDeps?.include?.push('graphql-request')
-    })
   }
 })
 

@@ -1,6 +1,4 @@
-import type { GraphQLClient } from 'graphql-request'
-import type { GraphQLError, PatchedRequestInit } from 'graphql-request/dist/types'
-
+import type { GqlClient as GQLClient, GraphQLError, GqlOperation } from 'ohmygql'
 type TokenOpts = { name?: string, value?: string, type?: string}
 
 export interface GqlClient<T = string> {
@@ -114,14 +112,13 @@ export interface GqlConfig<T = GqlClient> {
 }
 
 export type GqlError = {
-  client: string
-  operationName: string
-  operationType: string
-  statusCode?: number
-  gqlErrors?: GraphQLError[]
+  client?: string
+  status?: number
+  operation?: GqlOperation
+  gqlErrors?: GraphQLError[] | undefined
 }
 
 export type OnGqlError = <T>(error: GqlError) => Promise<T> | any
 
-type GqlStateOpts = {instance?: GraphQLClient, options?: PatchedRequestInit}
+type GqlStateOpts = {instance?: GQLClient, options?: RequestInit}
 export type GqlState = Record<string, GqlStateOpts> & { onError?: OnGqlError }

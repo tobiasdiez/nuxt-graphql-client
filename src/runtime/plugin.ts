@@ -1,6 +1,6 @@
 import { defu } from 'defu'
 import type { Ref } from 'vue'
-import { GraphQLClient } from 'graphql-request'
+import { GqlClient } from 'ohmygql'
 import type { GqlState, GqlConfig } from '../types'
 import { deepmerge } from './utils'
 import { ref, useNuxtApp, defineNuxtPlugin, useRuntimeConfig, useRequestHeaders } from '#imports'
@@ -33,7 +33,7 @@ export default defineNuxtPlugin(() => {
 
       nuxtApp._gqlState.value[name] = {
         options: opts,
-        instance: new GraphQLClient(host, opts)
+        instance: GqlClient({ host, ...opts })
       }
     }
   }

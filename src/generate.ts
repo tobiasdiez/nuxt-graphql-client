@@ -1,9 +1,5 @@
 import { generate } from '@graphql-codegen/cli'
 
-import * as PluginTS from '@graphql-codegen/typescript'
-import * as PluginTSOperations from '@graphql-codegen/typescript-operations'
-import * as PluginTSGraphqlRequest from '@graphql-codegen/typescript-graphql-request'
-
 import type { Types } from '@graphql-codegen/plugin-helpers'
 import type { Resolver } from '@nuxt/kit'
 import type { GqlConfig } from './types'
@@ -16,12 +12,6 @@ interface GenerateOptions {
   documents?: string[]
   onlyOperationTypes?: boolean
   resolver? : Resolver
-}
-
-function pluginLoader (name: string): Promise<any> {
-  if (name === '@graphql-codegen/typescript') { return Promise.resolve(PluginTS) }
-  if (name === '@graphql-codegen/typescript-operations') { return Promise.resolve(PluginTSOperations) }
-  if (name === '@graphql-codegen/typescript-graphql-request') { return Promise.resolve(PluginTSGraphqlRequest) }
 }
 
 function prepareConfig (options: GenerateOptions): Types.Config {
@@ -37,7 +27,6 @@ function prepareConfig (options: GenerateOptions): Types.Config {
 
   return {
     schema,
-    pluginLoader,
     silent: options.silent,
     documents: options.documents,
     generates: {
@@ -46,7 +35,6 @@ function prepareConfig (options: GenerateOptions): Types.Config {
         config: {
           skipTypename: true,
           useTypeImports: true,
-          gqlImport: 'graphql-request#gql',
           onlyOperationTypes: options.onlyOperationTypes,
           namingConvention: {
             enumValues: 'change-case-all#upperCaseFirst'

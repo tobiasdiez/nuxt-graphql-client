@@ -2,11 +2,11 @@ import { hash } from 'ohash'
 import type { Ref } from 'vue'
 import type { AsyncData } from 'nuxt/dist/app/composables'
 import type { GqlState, GqlConfig, GqlError, OnGqlError } from '../../types'
-import { deepmerge } from '../utils'
 // @ts-ignore
 import { GqlOperations, GqlInstance } from '#build/gql'
 import type { GqlClients, GqlFunc } from '#build/gql'
-import { getSdk as gqlSdk } from '#build/gql-sdk'
+import { extractOperation } from 'ohmygql/utils'
+import { gqlSdk } from '#build/gql-sdk'
 import { useState, useNuxtApp, useAsyncData, useRuntimeConfig } from '#imports'
 
 const useGqlState = (): Ref<GqlState> => {
@@ -20,48 +20,10 @@ const useGqlState = (): Ref<GqlState> => {
  * @param {object} options Changes to be made to gqlState
  *
  * */
-// The decision was made to avert using `GraphQLClient's` `setHeader(s)` helper in favor of reactivity and more granular control.
 const setGqlState = ({ client = 'default', patch }: {client: GqlClients, patch: RequestInit}) => {
   const state = useGqlState()
 
-  const reset = !Object.keys(patch).length
-  const partial = !reset && Object.keys(patch).some(key => typeof patch[key] !== 'object'
-    ? !patch[key]
-    : (!Object.keys(patch[key]).length || Object.keys(patch[key]).some(subKey => !patch[key][subKey])))
-
-  if (reset) {
-    state.value[client].options = {}
-  } else if (partial) {
-    for (const key in patch) {
-      if (typeof patch[key] !== 'object') {
-        if (patch[key]) {
-          state.value[client].options[key] = patch[key]
-        } else if (key in state.value[client].options) {
-          delete state.value[client].options[key]
-        }
-
-        continue
-      }
-
-      if (!Object.keys(patch[key]).length && key in state.value[client].options) {
-        delete state.value[client].options[key]
-        continue
-      }
-
-      for (const subKey in patch[key]) {
-        if (patch[key][subKey]) {
-          state.value[client].options[key][subKey] = patch[key][subKey]
-        } else if (typeof state.value[client].options?.[key] === 'object' && subKey in state.value[client].options?.[key]) {
-          delete state.value[client].options[key][subKey]
-        }
-      }
-    }
-  } else {
-    state.value[client].options = deepmerge(state.value[client].options, patch)
-  }
-
-  // @ts-ignore
-  state.value[client].instance.options = state.value[client].options
+  state.value[client].instance.setOptions(patch)
 }
 
 /**
@@ -90,10 +52,8 @@ export function useGqlHeaders (headers: Record<string, string>, client?: GqlClie
 export function useGqlHeaders (opts :{headers: Record<string, string>, client?: GqlClients, respectDefaults?: boolean}): void
 export function useGqlHeaders (...args: any[]) {
   const client = args[1] || args?.[0]?.client
-  let headers = (args[0] && typeof args[0] !== 'undefined' && 'headers' in args[0]) ? args[0].headers : args[0]
+  const headers = (args[0] && typeof args[0] !== 'undefined' && 'headers' in args[0]) ? args[0].headers : args[0]
   const respectDefaults = args?.[0]?.respectDefaults
-
-  headers = headers || {}
 
   setGqlState({ client, patch: { headers } })
 
@@ -204,27 +164,23 @@ export const useGql = () => {
     client = client || 'default'
     const { instance } = state.value?.[client]
 
-    const $gql: ReturnType<typeof gqlSdk> = gqlSdk(instance, async (action, operationName, operationType): Promise<any> => {
-      try {
-        return await action()
-      } catch (err) {
+    instance.setMiddleware({
+      // eslint-disable-next-line require-await
+      onResponseError: async ({ options, response }) => {
         errState.value = {
           client,
-          operationType,
-          operationName,
-          statusCode: err?.response?.status,
-          gqlErrors: err?.response?.errors
+          status: response?.status,
+          operation: extractOperation(JSON.parse(options?.body as string)?.query || ''),
+          gqlErrors: Array.isArray(response?._data?.errors) ? response?._data?.errors : [response?._data]
         }
 
         if (state.value.onError) {
           state.value.onError(errState.value)
         }
-
-        throw errState.value
       }
     })
 
-    return { ...$gql }
+    return gqlSdk(instance)
   }
 
   return { handle }
