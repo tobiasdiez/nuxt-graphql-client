@@ -99,7 +99,7 @@ export function prepareTemplate (ctx: GqlContext) {
 
   const oust = (from: string, to: string) => ctx.template
     .replace(new RegExp(from, 'g'), to)
-    .replace(new RegExp(toPSCase(from), 'g'), toPSCase(to))
+    .replace(new RegExp(toPSCase(from), 'gi'), toPSCase(to))
 
   for (const [client, ops] of Object.entries(ctx.clientOps)) {
     if (!ops?.length) { continue }
@@ -108,7 +108,7 @@ export function prepareTemplate (ctx: GqlContext) {
       const originalName = `${client}_${op}`
 
       const [basic, special] = [op, originalName].map(n =>
-        new RegExp(`\\s${n}\\s*(?=\\(variables)`, 'g').test(ctx.template))
+        new RegExp(`\\s${n}(?=:\\s<T\\sextends\\s\\w+(Query|Mutation))`, 'g').test(ctx.template))
 
       if (basic) { continue }
 
@@ -119,7 +119,7 @@ export function prepareTemplate (ctx: GqlContext) {
       }
 
       if (!basic && !special) {
-        const reInvalid = new RegExp(`\\w+_(${op})\\s*(?=\\(variables)`)
+        const reInvalid = new RegExp(`\\s\\w+_(${op})(?=:\\s<T\\sextends\\s\\w+(Query|Mutation))`)
 
         if (!reInvalid.test(ctx.template)) { continue }
 
