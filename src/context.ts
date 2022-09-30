@@ -4,6 +4,7 @@ import { upperFirst } from 'scule'
 import type { Import } from 'unimport'
 
 export interface GqlContext {
+  codegen?: boolean
   template?: string
   fns?: string[]
   clients?: string[]
@@ -14,7 +15,7 @@ export interface GqlContext {
 }
 
 export function prepareContext (ctx: GqlContext, prefix: string) {
-  ctx.fns = ctx.template?.match(/\w+(?=:\s<T\sextends\s\w+(Query|Mutation))/g)?.sort() || []
+  ctx.fns = ctx.template?.match(!ctx?.codegen ? /\w+(?=:\s\(variables)/g : /\w+(?=:\s<T\sextends\s\w+(Query|Mutation))/g)?.sort() || []
 
   const fnName = (fn: string) => prefix + upperFirst(fn)
 
@@ -108,7 +109,7 @@ export function prepareTemplate (ctx: GqlContext) {
       const originalName = `${client}_${op}`
 
       const [basic, special] = [op, originalName].map(n =>
-        new RegExp(`\\s${n}(?=:\\s<T\\sextends\\s\\w+(Query|Mutation))`, 'g').test(ctx.template))
+        new RegExp(`\\s${n}(?=:\\s${!ctx?.codegen ? '\\(variables)' : '<T\\sextends\\s\\w+(Query|Mutation))'}`, 'g').test(ctx.template))
 
       if (basic) { continue }
 
@@ -119,7 +120,7 @@ export function prepareTemplate (ctx: GqlContext) {
       }
 
       if (!basic && !special) {
-        const reInvalid = new RegExp(`\\s\\w+_(${op})(?=:\\s<T\\sextends\\s\\w+(Query|Mutation))`)
+        const reInvalid = new RegExp(`\\s\\w+_(${op})(?=:\\s${!ctx?.codegen ? '\\(variables)' : '<T\\sextends\\s\\w+(Query|Mutation))'}`)
 
         if (!reInvalid.test(ctx.template)) { continue }
 

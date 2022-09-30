@@ -1,6 +1,9 @@
-import { existsSync, statSync } from 'fs'
+import { existsSync, statSync, readFileSync } from 'fs'
 import { defu } from 'defu'
-import { useLogger, addPlugin, addImportsDir, addTemplate, resolveFiles, createResolver, defineNuxtModule, extendViteConfig } from '@nuxt/kit'
+import { parse } from 'graphql'
+import { mockPlugin } from 'ohmygql/plugin'
+import { useLogger, addPlugin, addImportsDir, addTemplate, resolveFiles, createResolver, defineNuxtModule } from '@nuxt/kit'
+import type { NameNode, DefinitionNode } from 'graphql'
 import { name, version } from '../package.json'
 import generate from './generate'
 import { deepmerge } from './runtime/utils'
@@ -22,6 +25,7 @@ export default defineNuxtModule<GqlConfig>({
     clients: {},
     watch: true,
     silent: true,
+    codegen: true,
     autoImport: true,
     functionPrefix: 'Gql',
     onlyOperationTypes: true
@@ -32,15 +36,13 @@ export default defineNuxtModule<GqlConfig>({
 
     nuxt.options.build.transpile.push(resolver.resolve('runtime'))
 
-    const ctx: GqlContext = { clients: [], clientOps: {}, fnImports: [] }
-
     const config: GqlConfig<string | GqlClient> = defu(
       {},
       nuxt.options.runtimeConfig.public['graphql-client'],
       nuxt.options.runtimeConfig.public.gql,
       opts)
 
-    ctx.clients = Object.keys(config.clients)
+    const ctx: GqlContext = { clientOps: {}, fnImports: [], codegen: config?.codegen, clients: Object.keys(config.clients) }
 
     if (!ctx?.clients?.length) {
       const host =
@@ -139,15 +141,28 @@ export default defineNuxtModule<GqlConfig>({
         plugins.push('typescript-operations', 'ohmygql/plugin')
       }
 
-      ctx.template = await generate({
-        clients: config.clients as GqlConfig['clients'],
-        file: 'gql-sdk.ts',
-        silent: config.silent,
-        plugins,
-        documents,
-        onlyOperationTypes: config.onlyOperationTypes,
-        resolver: srcResolver
-      })
+      ctx.template = config?.codegen
+        ? await generate({
+          clients: config.clients as GqlConfig['clients'],
+          file: 'gql-sdk.ts',
+          silent: config.silent,
+          plugins,
+          documents,
+          onlyOperationTypes: config.onlyOperationTypes,
+          resolver: srcResolver
+        })
+        : mockPlugin(documents.reduce<Record<string, string>>((acc, d) => {
+          const definitions = parse(readFileSync(d, 'utf-8'))?.definitions as (DefinitionNode & { name: NameNode })[]
+
+          for (const op of definitions) {
+            const name: string = op?.name?.value
+            const operation = op.loc?.source.body.slice(op.loc.start, op.loc.end) || undefined
+
+            if (name && operation) { acc[name] = operation }
+          }
+
+          return acc
+        }, {}))
 
       await prepareOperations(ctx, documents)
 

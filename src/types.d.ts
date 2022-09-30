@@ -50,6 +50,11 @@ export interface GqlClient<T = string> {
 
 export interface GqlConfig<T = GqlClient> {
   /**
+   * Specify whether or not GraphQL Code Generator should be enabled, setting this option to `false` results in limited TypeScript support.
+   */
+  codegen?: boolean
+
+  /**
    * Prevent codegen from printing to console in dev mode
    *
    * @type boolean
