@@ -48,12 +48,7 @@ export interface GqlClient<T = string> {
   }
 }
 
-export interface GqlConfig<T = GqlClient> {
-  /**
-   * Specify whether or not GraphQL Code Generator should be enabled, setting this option to `false` results in limited TypeScript support.
-   */
-  codegen?: boolean
-
+export interface GqlCodegen {
   /**
    * Prevent codegen from printing to console in dev mode
    *
@@ -61,6 +56,25 @@ export interface GqlConfig<T = GqlClient> {
    * @default true
    */
   silent?: boolean
+
+  /**
+   * Only generate the types for the operations in your GraphQL documents.
+   * When set to true, only the types needed for your operations will be generated.
+   * When set to false, all types from the GraphQL schema will be generated.
+   *
+   * @type boolean
+   * @default true
+   * */
+  onlyOperationTypes?: boolean
+
+  stitchSchemas?: boolean
+}
+
+export interface GqlConfig<T = GqlClient> {
+  /**
+   * Configuration for the GraphQL Code Generator, setting this option to `false` results in limited TypeScript support.
+   */
+  codegen?: boolean | GqlCodegen
 
   /**
    * Enable hot reloading for GraphQL documents
@@ -102,16 +116,6 @@ export interface GqlConfig<T = GqlClient> {
    * @example ['../shared/queries']
    * */
   documentPaths?: string[]
-
-  /**
-   * Only generate the types for the operations in your GraphQL documents.
-   * When set to true, only the types needed for your operations will be generated.
-   * When set to false, all types from the GraphQL schema will be generated.
-   *
-   * @type boolean
-   * @default true
-   * */
-  onlyOperationTypes?: boolean
 
   /**
    * Allows generating multiple clients with different GraphQL hosts.
