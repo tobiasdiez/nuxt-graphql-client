@@ -48,6 +48,12 @@ export interface GqlClient<T = string> {
   }
 }
 
+export interface StitchOptions {
+  mergeTypes?: boolean
+  prefixTypes?: boolean
+  prefixFields?: boolean
+}
+
 export interface GqlCodegen {
   /**
    * Prevent codegen from printing to console in dev mode
@@ -67,7 +73,13 @@ export interface GqlCodegen {
    * */
   onlyOperationTypes?: boolean
 
-  stitchSchemas?: boolean
+  skipTypename?: boolean
+
+  stitchSchemas?: boolean | StitchOptions
+
+  useTypeImports?: boolean
+
+  dedupeFragments?: boolean
 }
 
 export interface GqlConfig<T = GqlClient> {

@@ -1,11 +1,11 @@
 import { hash } from 'ohash'
 import type { Ref } from 'vue'
 import type { AsyncData } from 'nuxt/dist/app/composables'
+import { extractOperation } from 'ohmygql/utils'
 import type { GqlState, GqlConfig, GqlError, OnGqlError } from '../../types'
 // @ts-ignore
 import { GqlOperations, GqlInstance } from '#build/gql'
 import type { GqlClients, GqlFunc } from '#build/gql'
-import { extractOperation } from 'ohmygql/utils'
 import { gqlSdk } from '#build/gql-sdk'
 import { useState, useNuxtApp, useAsyncData, useRuntimeConfig } from '#imports'
 
@@ -58,8 +58,12 @@ export function useGqlHeaders (...args: any[]) {
   setGqlState({ client, patch: { headers } })
 
   if (respectDefaults && !Object.keys(headers).length) {
-    const defaultHeaders = (useRuntimeConfig()?.public?.['graphql-client'] as GqlConfig)?.clients?.[client || 'default']?.headers
-    setGqlState({ client, patch: { headers: defaultHeaders } })
+    const clientHeaders = (useRuntimeConfig()?.public?.['graphql-client'] as GqlConfig)?.clients?.[client || 'default']?.headers
+
+    const serverHeaders = (process.server && (typeof clientHeaders?.serverOnly === 'object' && clientHeaders?.serverOnly)) || undefined
+    if (clientHeaders?.serverOnly) { delete clientHeaders.serverOnly }
+
+    setGqlState({ client, patch: { headers: { ...(clientHeaders as Record<string, string>), ...serverHeaders } } })
   }
 }
 

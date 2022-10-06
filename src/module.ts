@@ -40,7 +40,13 @@ export default defineNuxtModule<GqlConfig>({
       nuxt.options.runtimeConfig.public.gql,
       opts)
 
-    const codegenDefaults: GqlCodegen = { silent: true, onlyOperationTypes: true }
+    const codegenDefaults: GqlCodegen = {
+      silent: true,
+      skipTypename: true,
+      useTypeImports: true,
+      dedupeFragments: true,
+      onlyOperationTypes: true
+    }
 
     config.codegen = !!config.codegen && defu<GqlCodegen, [GqlCodegen]>(config.codegen, codegenDefaults)
 
