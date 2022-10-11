@@ -52,7 +52,7 @@
     "graphql": "^16.6.0",
     "graphql-tag": "^2.12.6",
     "ohash": "^0.1.5",
-    "ohmygql": "^1.0.7",
+    "ohmygql": "^1.0.8",
     "scule": "^0.3.2"
   },
   "devDependencies": {

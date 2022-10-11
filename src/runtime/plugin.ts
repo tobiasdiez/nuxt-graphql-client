@@ -36,7 +36,11 @@ export default defineNuxtPlugin(() => {
 
       nuxtApp._gqlState.value[name] = {
         options: opts,
-        instance: GqlClient({ host, ...opts })
+        instance: GqlClient({
+          ...opts,
+          host,
+          useGETForQueries: v?.preferGETQueries,
+        })
       }
     }
   }

@@ -76,7 +76,8 @@ export default defineNuxtModule<GqlConfig>({
 
     const clientDefaults: Partial<GqlClient<TokenOpts> > = {
       token: { type: 'Bearer', name: 'Authorization' },
-      proxyCookies: true
+      proxyCookies: true,
+      preferGETQueries: config?.preferGETQueries ?? false
     }
 
     for (const [k, v] of Object.entries(config.clients)) {
